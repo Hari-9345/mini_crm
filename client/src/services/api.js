@@ -1,10 +1,9 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: " https://mini-crm-4ab0.onrender.com",
+  baseURL: "https://mini-crm-4ab0.onrender.com/api", // ✅ NO SPACE
 });
 
-// 🔥 attach token
 API.interceptors.request.use((req) => {
   const token = localStorage.getItem("token");
 
