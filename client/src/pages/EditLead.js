@@ -1,37 +1,46 @@
-import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useEffect, useState, useCallback } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import API from "../services/api";
 import Layout from "../components/Layout";
 
 export default function EditLead() {
   const { id } = useParams();
+  const navigate = useNavigate();
 
-  const [form, setForm] = useState({
+  const [lead, setLead] = useState({
     name: "",
     email: "",
     phone: "",
-    status: "New"
+    status: "New",
   });
 
-  useEffect(() => {
-    fetchLead();
-  }, []);
-
-  const fetchLead = async () => {
-    const res = await API.get("/leads");
-    const lead = res.data.find((l) => l._id === id);
-    if (lead) setForm(lead);
-  };
-
-  const submit = async (e) => {
-    e.preventDefault();
-
+  // ✅ FIXED: useCallback to avoid ESLint error
+  const fetchLead = useCallback(async () => {
     try {
-      await API.put(`/leads/${id}`, form);
-      alert("Updated successfully");
-      window.location.href = "/dashboard";
+      const res = await API.get(`/leads/${id}`);
+      setLead(res.data);
     } catch (err) {
       console.error(err);
+    }
+  }, [id]);
+
+  // ✅ FIXED: dependency added
+  useEffect(() => {
+    fetchLead();
+  }, [fetchLead]);
+
+  // Handle input change
+  const handleChange = (e) => {
+    setLead({ ...lead, [e.target.name]: e.target.value });
+  };
+
+  // Update lead
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await API.put(`/leads/${id}`, lead);
+      navigate("/dashboard");
+    } catch (err) {
       alert("Update failed");
     }
   };
@@ -40,34 +49,42 @@ export default function EditLead() {
     <Layout>
       <h2>Edit Lead</h2>
 
-      <form onSubmit={submit}>
+      <form onSubmit={handleSubmit}>
         <input
-          value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
+          name="name"
+          value={lead.name}
+          onChange={handleChange}
+          placeholder="Name"
+          required
         />
         <br /><br />
 
         <input
-          value={form.email}
-          onChange={(e) => setForm({ ...form, email: e.target.value })}
+          name="email"
+          value={lead.email}
+          onChange={handleChange}
+          placeholder="Email"
+          required
         />
         <br /><br />
 
         <input
-          value={form.phone}
-          onChange={(e) => setForm({ ...form, phone: e.target.value })}
+          name="phone"
+          value={lead.phone}
+          onChange={handleChange}
+          placeholder="Phone"
         />
         <br /><br />
 
         <select
-          value={form.status}
-          onChange={(e) => setForm({ ...form, status: e.target.value })}
+          name="status"
+          value={lead.status}
+          onChange={handleChange}
         >
           <option value="New">New</option>
           <option value="Contacted">Contacted</option>
           <option value="Lost">Lost</option>
         </select>
-
         <br /><br />
 
         <button type="submit">Update</button>
